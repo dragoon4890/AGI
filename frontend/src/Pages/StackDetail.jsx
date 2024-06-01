@@ -30,29 +30,29 @@ const StackDetail = () => {
     const newNode = {
       id: `${nodeId}`,
       position: { x: Math.random() * 250, y: Math.random() * 250 },
-      data: { label: `AGENT`, onChange: (event) => console.log(event.target.value) },
+      data: { label: `AGENT`, inputs: ["task","role","backstory", "capability"], onChange: (event) => console.log(event.target.value) },
       type: 'custom',
     };
     setNodes((nds) => [...nds, newNode]);
     setNodeId(nodeId + 1);
   };
 
-  const addTools = (someValue) => () => {
+  const addTools = (someValue, inputvalue) => () => {
     const newNode = {
       id: `${nodeId}`,
       position: { x: Math.random() * 250, y: Math.random() * 250 },
-      data: { label: `${someValue}`, onChange: (event) => console.log(event.target.value) },
+      data: { label: `${someValue}`, inputs: inputvalue, onChange: (event) => console.log(event.target.value) },
       type: 'custom',
     };
     setNodes((nds) => [...nds, newNode]);
     setNodeId(nodeId + 1);
   };
 
-  const addLLM = (someValue) => () => {
+  const addLLM = (someValue,opvalue) => () => {
     const newNode = {
       id: `${nodeId}`,
       position: { x: Math.random() * 250, y: Math.random() * 250 },
-      data: { label: `${someValue}`, onChange: (event) => console.log(event.target.value) },
+      data: { label: `${someValue}`, inputs: [opvalue], onChange: (event) => console.log(event.target.value) },
       type: 'custom',
     };
     setNodes((nds) => [...nds, newNode]);
@@ -61,8 +61,8 @@ const StackDetail = () => {
 
   let { id } = useParams();
 
-  const Tools = ["Github", "DuckDuckGo", "Gmail"];
-  const LLMs = ["OpenAI 3.5", "OpenAi 4", "Azure OpenAi"];
+  const Tools = [["Github",["GITHUB_APP_ID", "GITHUB_APP_PRIVATE_KEY","GITHUB_REPOSITORY"]], ["DuckDuckGo",[]], ["Gmail",["GMAIL_CREDS"]]];
+  const LLMs = [["OpenAI 3.5",["Open Api Key"]],[ "OpenAi 4",["Open Api Key"]], ["Azure OpenAi",["base url","deployment name","model name", "openAI Api Version" , "Api key"]]];
 
   return (
     <div style={{ height: 'calc(100vh - 3.5rem)' }} className='w-screen flex flex-row'>
@@ -73,14 +73,14 @@ const StackDetail = () => {
         </Button>
         <h1>Tools</h1> 
         {Tools.map(tool => (
-          <Button key={tool} onClick={addTools(tool)} className="w-20">
-            {tool}
+          <Button key={tool[0]} onClick={addTools(tool[0],tool[1])} className="w-20">
+            {tool[0]}
           </Button>
         ))}
         <h1>LLMs</h1>
         {LLMs.map(llm => (
-          <Button key={llm} onClick={addLLM(llm)} className="w-20">
-            {llm}
+          <Button key={llm[0]} onClick={addLLM(llm[0],llm[1])} className="w-20">
+            {llm[0]}
           </Button>
         ))}
       </div>
