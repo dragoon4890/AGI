@@ -1,51 +1,46 @@
-# main.py
-import logging
-
-from AgentGenHdr_tail import hdr_azure, hdr_openai, tail_azure, tail_openai
-from converter import convert_json_to_python
-from fastapi import FastAPI, Form
-from fastapi.responses import HTMLResponse
-from fastapi.staticfiles import StaticFiles
-from PlannerLLM import generateDAG
+from fastapi import FastAPI, HTTPException
+import json
+from openagi.init_agent import kickOffAgents
+from openagi.tools.integrations import DuckDuckGoSearchTool, GithubSearchTool, GmailSearchTool
+from openagi.llms.azure import AzureChatConfigModel, AzureChatOpenAIModel
+from openagi.llms.openai import OpenAIConfigModel, OpenAIModel
 
 app = FastAPI()
 
-# Mount the static folder to serve static files
-app.mount("/static", StaticFiles(directory="./static"), name="static")
+# Function to load configuration from JSON
+def load_config_from_json(json_input):
+    config = json.loads(json_input)
+    return config
 
 
-def generatePYProgram(objective: str, llm_choice: str) -> HTMLResponse:
-    # tool_list = [{"MyCalculator" : "Calculated the values of mathematical expressions with the help of python."}]
-    tool_list = []
-    logging.debug(f"objective: {objective}")
-    reply = generateDAG(objective, tool_list, llm_choice)
-    logging.debug(f"planner output: {reply}")
-    start_input_number = reply.index("[\n    {")
-    end_output_number = reply.rfind("]")
-    input = reply[start_input_number : end_output_number + 1]
-    output_code = convert_json_to_python(input)
-    logging.debug(f"code fragment generated:: {output_code}")
-    if llm_choice == "openai":
-        code1 = hdr_openai + output_code + tail_openai
+
+# Initialize LLM based on configuration
+def initialize_llm(config):
+    llm_config = config.get("llm_config", {})
+    if llm_config.get("type") == "openai":
+        llm = OpenAIModel(config=OpenAIConfigModel(**llm_config))
+    elif llm_config.get("type") == "azure":
+        llm = AzureChatOpenAIModel(config=AzureChatConfigModel(**llm_config))
     else:
-        code1 = hdr_azure + output_code + tail_azure
+        raise ValueError("Unsupported LLM type")
+    return llm
 
-    logging.debug(f"final  generated code :: {code1}")
-    return HTMLResponse(content=code1, status_code=200)
+class Agent:
+    def __init__(self, agent_data):
+        self.agentName = agent_data["agentName"]
+        self.role = agent_data["role"]
+        self.goal = agent_data["goal"]
+        self.backstory = agent_data["backstory"]
+        self.capability = agent_data["capability"]
+        self.task = agent_data["task"]
+        self.output_consumer_agent = agent_data["output_consumer_agent"]
+        self.tools_list = [globals()[tool] for tool in agent_data.get("tools_list", [])]
 
-
-@app.get("/", response_class=HTMLResponse)
-async def get_form():
-    return HTMLResponse(content=open("./static/index.html", "r").read(), status_code=200)
-
-
-@app.post("/generate")
-async def generate_code(objective: str = Form(...), llm_choice: str = Form(...)):
-    code = generatePYProgram(objective, llm_choice)
-    return code
-
-
-if __name__ == "__main__":
-    import uvicorn
-
-    uvicorn.run(app, host="127.0.0.1", port=8000)
+# Define FastAPI endpoints
+@app.post("/initialize_agents/")
+async def initialize_agents(json_input: dict):
+    config = load_config_from_json(json_input)
+    llm = initialize_llm(config)
+    agent_list = [Agent(agent_data) for agent_data in config.get("agents", [])]
+    kickOffAgents(agent_list, [agent_list[0]], llm=llm)
+    return {"message": "Agents initialized successfully."}

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import NewStack from "../../assets/components/NewStack/NewStack";
+import NewStack from "../../assets/helpers/NewStack/NewStack";
 import { Link } from "react-router-dom";
 
 function Home() {

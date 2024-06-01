@@ -14,8 +14,10 @@ COPY . .
 # Build the application
 RUN npm run build
 
+RUN npm install -g serve
+
 # Expose the port that Vite preview uses, typically 4173 by default
 EXPOSE 4173
 
 # Command to run the application in preview mode
-CMD ["npm", "run", "preview"]
+CMD ["serve", "-s", "dist", "-l", "4173"]

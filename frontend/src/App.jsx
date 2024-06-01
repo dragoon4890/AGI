@@ -1,4 +1,4 @@
-import Navbar from "../src/assets/components/Navbar/Navbar";;
+import Navbar from "../src/assets/helpers/Navbar/Navbar";;
 import Home from "../src/Pages/Home/Home"
 import "./index.css";
 import { Routes, Route } from "react-router-dom";

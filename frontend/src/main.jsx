@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom/client'
 import { BrowserRouter} from 'react-router-dom';
 import App from './App.jsx'
 import './index.css'
-import Navbar from './assets/components/Navbar/Navbar.jsx'
+import Navbar from './assets/helpers/Navbar/Navbar.jsx'
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>

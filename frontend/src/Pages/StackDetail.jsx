@@ -8,7 +8,7 @@ import ReactFlow, {
   addEdge,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
-import CustomNode from '../assets/components/CustomNodes/CustomNode';
+import CustomNode from '../assets/helpers/CustomNodes/CustomNode';
 import { useParams } from "react-router-dom";
 import { Button } from '@/components/ui/button';
 
