@@ -42,13 +42,13 @@ const NewStack = ({ stack, addStackItem, stackId, color }) => {
     <>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogTrigger asChild>
-          <Button variant="outline" color={color} size="sm">
+          <Button variant="outline" color={color} size="sm" className="z-99">
             {stackId ? 'Edit Stack' : '+ New Stack'}
           </Button>
         </DialogTrigger>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>{stackId ? 'Edit Stack' : 'Create New Stack'}</DialogTitle>
+            <DialogTitle className="z-99">{stackId ? 'Edit Stack' : 'Create New Stack'}</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSave} className="grid gap-4 py-4">
             <div className="flex flex-col items-start gap-4">

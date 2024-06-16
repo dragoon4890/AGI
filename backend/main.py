@@ -1,46 +1,70 @@
-from fastapi import FastAPI, HTTPException
-import json
-from openagi.init_agent import kickOffAgents
-from openagi.tools.integrations import DuckDuckGoSearchTool, GithubSearchTool, GmailSearchTool
-from openagi.llms.azure import AzureChatConfigModel, AzureChatOpenAIModel
-from openagi.llms.openai import OpenAIConfigModel, OpenAIModel
+from openagi.actions.files import WriteFileAction
+from openagi.actions.tools.ddg_search import DuckDuckGoNewsSearch, DuckDuckGoSearch
+from openagi.actions.tools.webloader import WebBaseContextTool
+from openagi.agent import Admin
+from openagi.llms.openai import OpenAIConfigModel,OpenAIModel
+from openagi.memory import Memory
+from openagi.planner.task_decomposer import TaskPlanner
+from openagi.worker import Worker
+from rich.console import Console
+from rich.markdown import Markdown
 
-app = FastAPI()
+from langchain_google_genai import ChatGoogleGenerativeAI
 
-# Function to load configuration from JSON
-def load_config_from_json(json_input):
-    config = json.loads(json_input)
-    return config
+if __name__ == "__main__":
+    # config = OpenAIConfigModel(
+    #     api_key='lm-studio',
+    #     model="",
+    #     base_url=""
+    # )
+    config = OpenAIConfigModel(
+        api_key='',
+        model="",
+        base_url=""
+    )
+    llm = OpenAIModel(config=config)
 
+    # Team Members
+    researcher = Worker(
+        role="Research Analyst",
+        instructions="Uncover cutting-edge developments in AI and data science. You work at a leading tech think tank. Your expertise lies in identifying emerging trends. You have a knack for dissecting complex data and presenting actionable insights.",
+        actions=[
+            DuckDuckGoNewsSearch,
+            WebBaseContextTool,
+        ],
+    )
+    writer = Worker(
+        role="Tech Content Strategist",
+        instructions="Craft compelling content on tech advancements. You are a renowned Content Strategist, known for your insightful and engaging articles.You transform complex concepts into compelling narratives. Finally return the entire article as output.",
+        actions=[
+            DuckDuckGoNewsSearch,
+            WebBaseContextTool,
+        ],
+    )
+    reviewer = Worker(
+        role="Review and Editing Specialist",
+        instructions="Review the content for clarity, engagement, grammatical accuracy, and alignment with company values and refine it to ensure perfection. A meticulous editor with an eye for detail, ensuring every piece of content is clear, engaging, and grammatically perfect. Finally write the blog post to a file and return the same as output.",
+        actions=[
+            DuckDuckGoNewsSearch,
+            WebBaseContextTool,
+            WriteFileAction,
+        ],
+    )
 
+    # Team Manager/Admin
+    admin = Admin(
+        # actions=[DuckDuckGoSearch],
+        planner=TaskPlanner(human_intervene=False),
+        memory=Memory(),
+        llm=llm,
+    )
+    admin.assign_workers([researcher, writer, reviewer])
 
-# Initialize LLM based on configuration
-def initialize_llm(config):
-    llm_config = config.get("llm_config", {})
-    if llm_config.get("type") == "openai":
-        llm = OpenAIModel(config=OpenAIConfigModel(**llm_config))
-    elif llm_config.get("type") == "azure":
-        llm = AzureChatOpenAIModel(config=AzureChatConfigModel(**llm_config))
-    else:
-        raise ValueError("Unsupported LLM type")
-    return llm
+    res = admin.run(
+        query="Potential use of AI in catching pokemons",
+        description="Conduct a comprehensive analysis of the latest advancements in AI in 2024. Identify key trends, breakthrough technologies, and potential industry impacts. Using the insights provided, develop an engaging blog post that highlights the most significant AI advancements. Your post should be informative yet accessible, catering to a tech-savvy audience. Make it sound cool, avoid complex words so it doesn't sound like AI.",
+    )
 
-class Agent:
-    def __init__(self, agent_data):
-        self.agentName = agent_data["agentName"]
-        self.role = agent_data["role"]
-        self.goal = agent_data["goal"]
-        self.backstory = agent_data["backstory"]
-        self.capability = agent_data["capability"]
-        self.task = agent_data["task"]
-        self.output_consumer_agent = agent_data["output_consumer_agent"]
-        self.tools_list = [globals()[tool] for tool in agent_data.get("tools_list", [])]
-
-# Define FastAPI endpoints
-@app.post("/initialize_agents/")
-async def initialize_agents(json_input: dict):
-    config = load_config_from_json(json_input)
-    llm = initialize_llm(config)
-    agent_list = [Agent(agent_data) for agent_data in config.get("agents", [])]
-    kickOffAgents(agent_list, [agent_list[0]], llm=llm)
-    return {"message": "Agents initialized successfully."}
+    # Print the results from the OpenAGI
+    print("-" * 100)  # Separator
+    Console().print(res)

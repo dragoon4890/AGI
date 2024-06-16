@@ -34,6 +34,7 @@ venv.bak/
 
 # Pyre type checker
 .pyre/
+my_venv
 
 # PyCharm
 .idea/
